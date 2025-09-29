@@ -104,6 +104,8 @@ struct thread
     unsigned magic;                     /**< Detects stack overflow. */
   };
 
+
+  extern struct list ready_list;
 /** If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
@@ -139,5 +141,8 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+/* ADDED: Comparison function for threads based on priority. */
+bool thread_priority_less (const struct list_elem *a, const struct list_elem *b, void *aux);
 
 #endif /**< threads/thread.h */
