@@ -73,7 +73,7 @@ static tid_t allocate_tid(void);
 
 /** Comparison function for sorting threads by priority.
    Returns true if thread A has a higher priority than thread B. */
-bool thread_priority_less(const struct list_elem *a, const struct list_elem *b,
+bool custom_thrd_priority_comparator(const struct list_elem *a, const struct list_elem *b,
                           void *aux UNUSED) {
   const struct thread *thread_a = list_entry(a, struct thread, elem);
   const struct thread *thread_b = list_entry(b, struct thread, elem);
@@ -210,14 +210,15 @@ void thread_block(void) {
 }
 
 /** Transitions a blocked thread T to the ready-to-run state. */
-void thread_unblock(struct thread *t) {
+void thread_unblock(struct thread *t) 
+{
   enum intr_level old_level;
 
   ASSERT(is_thread(t));
 
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
-  list_insert_ordered(&ready_list, &t->elem, thread_priority_less, NULL);
+  list_insert_ordered(&ready_list, &t->elem, custom_thrd_priority_comparator, NULL); //put this back into the ready list ordered by priority
   t->status = THREAD_READY;
   intr_set_level(old_level);
 }
@@ -239,7 +240,8 @@ struct thread *thread_current(void) {
 tid_t thread_tid(void) { return thread_current()->tid; }
 
 /** Deschedules the current thread and destroys it. */
-void thread_exit(void) {
+void thread_exit(void) 
+{
   ASSERT(!intr_context());
 
 #ifdef USERPROG
@@ -254,7 +256,8 @@ void thread_exit(void) {
 }
 
 /** Yields the CPU. */
-void thread_yield(void) {
+void thread_yield(void) 
+{
   struct thread *cur = thread_current();
   enum intr_level old_level;
 
@@ -262,7 +265,7 @@ void thread_yield(void) {
 
   old_level = intr_disable();
   if (cur != idle_thread)
-    list_insert_ordered(&ready_list, &cur->elem, thread_priority_less, NULL);
+    list_insert_ordered(&ready_list, &cur->elem, custom_thrd_priority_comparator, NULL);
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
@@ -294,9 +297,8 @@ void thread_set_priority(int new_priority) {
   }
 
   /* After changing priority, we might need to yield. */
-  if (!list_empty(&ready_list) &&
-      cur->priority <
-          list_entry(list_front(&ready_list), struct thread, elem)->priority) {
+  if (!list_empty(&ready_list) && cur->priority < list_entry(list_front(&ready_list), struct thread, elem)->priority) 
+  {
     thread_yield();
   }
 
@@ -308,20 +310,23 @@ int thread_get_priority(void) { return thread_current()->priority; }
 
 /** Recalculates a thread's priority based on its base priority
    and the highest priority of any thread waiting on a lock it holds. */
-void thread_recalculate_priority(struct thread *t) {
+void thread_recalculate_priority(struct thread *t) 
+{
   int max_priority = t->base_priority;
-
-  if (!list_empty(&t->locks_held)) {
-    struct list_elem *e;
-    for (e = list_begin(&t->locks_held); e != list_end(&t->locks_held);
-         e = list_next(e)) {
-      struct lock *l = list_entry(e, struct lock, elem);
-      if (!list_empty(&l->semaphore.waiters)) {
+  if (!list_empty(&t->locks_held)) 
+  {
+    struct list_elem *ee;
+    for (ee = list_begin(&t->locks_held); ee != list_end(&t->locks_held); ee = list_next(ee)) 
+    {
+      struct lock *l = list_entry(ee, struct lock, elem);
+      if (!list_empty(&l->semaphore.waiters)) 
+      {
         /* The waiters list is sorted, so the front is the highest priority
          * waiter. */
         struct thread *waiter =
             list_entry(list_front(&l->semaphore.waiters), struct thread, elem);
-        if (waiter->priority > max_priority) {
+        if (waiter->priority > max_priority) 
+        {
           max_priority = waiter->priority;
         }
       }
@@ -334,7 +339,8 @@ void thread_recalculate_priority(struct thread *t) {
 void thread_set_nice(int nice UNUSED) { /* Not yet implemented. */ }
 
 /** Returns the current thread's nice value. */
-int thread_get_nice(void) {
+int thread_get_nice(void) 
+{
   /* Not yet implemented. */
   return 0;
 }
@@ -352,7 +358,8 @@ int thread_get_recent_cpu(void) {
 }
 
 /** Idle thread.  Executes when no other thread is ready to run. */
-static void idle(void *idle_started_ UNUSED) {
+static void idle(void *idle_started_ UNUSED) 
+{
   struct semaphore *idle_started = idle_started_;
   idle_thread = thread_current();
   sema_up(idle_started);

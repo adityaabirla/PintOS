@@ -96,7 +96,7 @@ int thread_get_recent_cpu(void);
 int thread_get_load_avg(void);
 
 /* Comparison function for threads based on priority. */
-bool thread_priority_less(const struct list_elem *a, const struct list_elem *b,
+bool custom_thrd_priority_comparator(const struct list_elem *a, const struct list_elem *b,
                           void *aux);
 
 /* ADDED: Recalculates a thread's effective priority after a donation change. */

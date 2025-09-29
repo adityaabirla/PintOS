@@ -27,7 +27,7 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
       /* Insert thread into waiters list in priority order. */
-      list_insert_ordered (&sema->waiters, &thread_current ()->elem, thread_priority_less, NULL);
+      list_insert_ordered (&sema->waiters, &thread_current ()->elem, custom_thrd_priority_comparator, NULL);
       thread_block ();
     }
   sema->value--;
@@ -119,6 +119,7 @@ sema_test_helper (void *sema_)
     }
 }
 
+
 /** Initializes LOCK. */
 void
 lock_init (struct lock *lock)
@@ -137,6 +138,7 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  // printf("acquiring lock now <<\n");
   struct thread *cur = thread_current ();
 
   /* If the lock is held, we may need to donate priority. */
@@ -180,8 +182,7 @@ lock_try_acquire (struct lock *lock)
 }
 
 /** Releases LOCK, recalculating priority. */
-void
-lock_release (struct lock *lock) 
+void lock_release (struct lock *lock) 
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
@@ -200,8 +201,7 @@ lock_release (struct lock *lock)
 
 /** Returns true if the current thread holds LOCK, false
    otherwise. */
-bool
-lock_held_by_current_thread (const struct lock *lock) 
+bool lock_held_by_current_thread (const struct lock *lock) 
 {
   ASSERT (lock != NULL);
 
@@ -216,8 +216,7 @@ struct semaphore_elem
   };
 
 /** Initializes condition variable COND. */
-void
-cond_init (struct condition *cond)
+void cond_init (struct condition *cond)
 {
   ASSERT (cond != NULL);
 
@@ -225,8 +224,7 @@ cond_init (struct condition *cond)
 }
 
 /** Atomically releases LOCK and waits for COND to be signaled. */
-void
-cond_wait (struct condition *cond, struct lock *lock) 
+void cond_wait (struct condition *cond, struct lock *lock) 
 {
   struct semaphore_elem waiter;
 
@@ -243,8 +241,7 @@ cond_wait (struct condition *cond, struct lock *lock)
 }
 
 /** If any threads are waiting on COND, signals one of them. */
-void
-cond_signal (struct condition *cond, struct lock *lock UNUSED) 
+void cond_signal (struct condition *cond, struct lock *lock UNUSED) 
 {
   ASSERT (cond != NULL);
   ASSERT (lock != NULL);
@@ -252,8 +249,7 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
   ASSERT (lock_held_by_current_thread (lock));
 
   if (!list_empty (&cond->waiters)) 
-    sema_up (&list_entry (list_pop_front (&cond->waiters),
-                          struct semaphore_elem, elem)->semaphore);
+    sema_up (&list_entry (list_pop_front (&cond->waiters),struct semaphore_elem, elem)->semaphore);
 }
 
 /** Wakes up all threads, if any, waiting on COND. */
