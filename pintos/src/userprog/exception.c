@@ -5,6 +5,11 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "vm/page.h"
+#include "threads/vaddr.h" /* Added for PHYS_BASE and pg_round_down */
+#include <stdbool.h> /* Added for bool type */
+
+/* Maximum size of process stack, in bytes (copied from vm/page.c) */
+#define STACK_MAX (1024 * 1024)
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
@@ -148,6 +153,10 @@ page_fault (struct intr_frame *f)
        - user: access by user
    */
 
+   not_present = (f->error_code & PF_P) == 0;
+   write = (f->error_code & PF_W) != 0;
+   user = (f->error_code & PF_U) != 0;
+
    /* TODO: Implement demand paging here
        - Call your page_in() or similar
        - Allocate stack pages if necessary
@@ -155,6 +164,29 @@ page_fault (struct intr_frame *f)
        - Return to user if successful
     */
 
+   bool success = false;
+   if(not_present) //this page is not present -> handle demand paging
+   {
+      success = page_in(fault_addr);
+      if(!success && user)
+      {
+         //pag_in failed, check if it was a valid stack access
+         bool is_stack_acc = (fault_addr >= PHYS_BASE - STACK_MAX) && (fault_addr >= f->esp - 32);
+         if(is_stack_acc)
+         {
+            void* stk_pg_addr = pg_round_down(fault_addr);
+            if(page_allocate(stk_pg_addr, false))
+            {
+               success = page_in(fault_addr);
+            }
+         }
+      }
+   }
+   if(success)
+   {
+      return;
+   }
+   
   printf ("Page fault at %p: %s error %s page in %s context.\n",
           fault_addr,
           not_present ? "not present" : "rights violation",
