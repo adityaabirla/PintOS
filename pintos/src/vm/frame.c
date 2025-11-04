@@ -152,7 +152,7 @@ frame_free (struct frame *f)
      Hint: You need to mark this frame as free again 
      so it can be reused by other pages.
      Do NOT remove the lock operations. */
-
+    f->page = NULL;
   lock_release (&f->lock);
 }
 
