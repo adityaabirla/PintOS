@@ -1,8 +1,8 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-LDFLAGS_SERVER = -pthread -lrt
-LDFLAGS_CLIENT = -pthread -lrt
+LDFLAGS_SERVER = -pthread 
+LDFLAGS_CLIENT = -pthread 
 
 # Build directory
 BUILD_DIR = build
